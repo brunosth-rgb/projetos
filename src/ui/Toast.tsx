@@ -35,19 +35,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="fixed bottom-4 right-4 z-50 flex flex-col gap-2"
+        className="pointer-events-none fixed right-4 bottom-4 z-50 flex w-[min(420px,calc(100vw-2rem))] flex-col items-end gap-2 max-sm:right-0 max-sm:left-0 max-sm:mx-auto max-sm:items-center"
       >
         {toasts.map(t => (
           <div
             key={t.id}
             role="status"
-            className="flex items-center gap-3 rounded-md bg-slate-900 px-4 py-3 text-sm text-white shadow-lg"
+            className="pointer-events-auto flex w-full items-center gap-3 rounded-card border border-border bg-surface py-2 pr-2 pl-4 text-sm text-ink shadow-[0_8px_24px_rgb(0_0_0/0.12)]"
           >
-            <span>{t.message}</span>
+            <span className="min-w-0 flex-1 py-1">{t.message}</span>
             {t.retry && (
               <button
                 type="button"
-                className="font-semibold underline"
+                className="h-8 shrink-0 rounded-control px-2 font-medium text-ink underline-offset-2 transition-colors hover:bg-active hover:underline max-sm:h-11"
                 onClick={() => {
                   const retry = t.retry
                   dismiss(t.id)
@@ -57,8 +57,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 Tentar de novo
               </button>
             )}
-            <button type="button" aria-label="Fechar aviso" onClick={() => dismiss(t.id)}>
-              ×
+            <button
+              type="button"
+              aria-label="Fechar aviso"
+              onClick={() => dismiss(t.id)}
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-control text-muted transition-colors hover:bg-active hover:text-ink max-sm:size-11"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+                <path d="M3 3l8 8M11 3l-8 8" />
+              </svg>
             </button>
           </div>
         ))}

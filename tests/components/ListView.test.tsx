@@ -118,8 +118,6 @@ describe('Header', () => {
       onViewChange: vi.fn(),
       filters,
       onFiltersChange: vi.fn(),
-      onNew: vi.fn(),
-      onSignOut: vi.fn(),
       ...over,
     }
     render(<Header {...props} />)
@@ -132,7 +130,7 @@ describe('Header', () => {
     expect(p.onFiltersChange).toHaveBeenCalledWith({ ...filters, showDone: true })
   })
 
-  it('alterna visão, meus steps, status, novo e sair', async () => {
+  it('alterna visão, meus steps e status', async () => {
     const p = setup()
     expect(screen.getByRole('button', { name: 'Lista' }).getAttribute('aria-pressed')).toBe('true')
     await userEvent.click(screen.getByRole('button', { name: 'Kanban' }))
@@ -143,9 +141,6 @@ describe('Header', () => {
     expect(p.onFiltersChange).toHaveBeenCalledWith({ ...filters, statuses: ['planejado'] })
     await userEvent.selectOptions(screen.getByLabelText('Status'), '')
     expect(p.onFiltersChange).toHaveBeenLastCalledWith({ ...filters, statuses: null })
-    await userEvent.click(screen.getByRole('button', { name: 'Novo projeto' }))
-    expect(p.onNew).toHaveBeenCalled()
-    await userEvent.click(screen.getByRole('button', { name: 'Sair' }))
-    expect(p.onSignOut).toHaveBeenCalled()
+    // "Novo projeto" now lives in App's title row and "Sair" in TopBar (see App.test / TopBar.test).
   })
 })

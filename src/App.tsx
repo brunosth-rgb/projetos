@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { Header, type Filters, type View } from './components/Header'
+import { TopBar } from './components/TopBar'
 import { KanbanView } from './components/KanbanView'
 import { ListView } from './components/ListView'
 import { ProjectDetail } from './components/ProjectDetail'
-import { filterProjects, todayLocal } from './domain/projects'
+import { filterProjects, profileLabel, todayLocal } from './domain/projects'
+import { projectFinding } from './domain/summary'
 import type { Status } from './domain/types'
 import { useProjects } from './state/useProjects'
 
@@ -93,44 +95,65 @@ export default function App() {
   // The kanban always shows every column in full; only "Meus steps" applies there.
   const kanbanProjects = filterProjects(projects, { showDone: true, statuses: null, mineUserId })
 
+  const ownProfile = user ? profiles.find(p => p.id === user.id) : undefined
+  const meta = (user?.user_metadata ?? {}) as { display_name?: unknown }
+  const userLabel = ownProfile
+    ? profileLabel(ownProfile)
+    : typeof meta.display_name === 'string' && meta.display_name
+      ? meta.display_name
+      : (user?.email ?? '')
+  const finding = loadError || (loading && projects.length === 0) ? '' : projectFinding(projects, today)
+
   return (
-    <div className="min-h-screen">
-      <h1 className="px-3 pt-3 text-2xl font-semibold">Gerenciador de Projetos</h1>
+    <div className="min-h-screen bg-ground text-ink">
+      <TopBar userLabel={userLabel} onSignOut={() => void signOut()} />
       {!online && (
-        <div role="status" className="bg-amber-100 px-3 py-2 text-sm text-amber-900">
-          Sem conexão: alterações não estão sendo salvas
+        <div role="status" className="border-b border-pill-warning-border bg-pill-warning-bg text-sm text-pill-warning-ink">
+          <div className="mx-auto max-w-[1200px] px-6 py-2 max-sm:px-4">Sem conexão: alterações não estão sendo salvas</div>
         </div>
       )}
-      <Header
-        view={view}
-        onViewChange={setView}
-        filters={filters}
-        onFiltersChange={setFilters}
-        onNew={() => setOpenId(null)}
-        onSignOut={() => void signOut()}
-      />
-      <main className="p-3">
-        {loadError ? (
-          <div className="p-6 text-center">
-            <p className="mb-3">Não foi possível carregar os projetos</p>
-            <button type="button" onClick={() => void reload()} className="rounded border border-slate-300 px-3 py-1.5 text-sm">
-              Recarregar
-            </button>
+      <div className="mx-auto max-w-[1200px] px-6 pt-8 pb-16 max-sm:px-4 max-sm:pt-6">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl leading-8 font-semibold tracking-[-0.01em]">Projetos</h1>
+            <p className="num mt-1 min-h-5 text-sm text-muted">{finding}</p>
           </div>
-        ) : loading && projects.length === 0 ? (
-          <p className="p-6 text-sm text-slate-600">Carregando…</p>
-        ) : view === 'lista' ? (
-          <ListView projects={visibleProjects} profiles={profiles} today={today} onOpen={setOpenId} />
-        ) : (
-          <KanbanView
-            projects={kanbanProjects}
-            profiles={profiles}
-            today={today}
-            onOpen={setOpenId}
-            onMove={(id, status, b, a) => void actions.moveProject(id, status, b, a)}
-          />
-        )}
-      </main>
+          <button
+            type="button"
+            onClick={() => setOpenId(null)}
+            className="inline-flex h-9 shrink-0 items-center rounded-control bg-primary px-4 text-sm font-medium text-primary-ink transition-opacity hover:opacity-85 active:opacity-75 max-sm:h-11"
+          >
+            Novo projeto
+          </button>
+        </div>
+        <Header view={view} onViewChange={setView} filters={filters} onFiltersChange={setFilters} />
+        <main className="mt-5">
+          {loadError ? (
+            <div className="rounded-card border border-border bg-surface px-6 py-12 text-center">
+              <p className="mb-4 text-sm">Não foi possível carregar os projetos</p>
+              <button
+                type="button"
+                onClick={() => void reload()}
+                className="inline-flex h-9 items-center rounded-control border border-control bg-surface px-3 text-sm transition-colors hover:border-faint max-sm:h-11"
+              >
+                Recarregar
+              </button>
+            </div>
+          ) : loading && projects.length === 0 ? (
+            <p className="py-12 text-center text-sm text-muted">Carregando…</p>
+          ) : view === 'lista' ? (
+            <ListView projects={visibleProjects} profiles={profiles} today={today} onOpen={setOpenId} />
+          ) : (
+            <KanbanView
+              projects={kanbanProjects}
+              profiles={profiles}
+              today={today}
+              onOpen={setOpenId}
+              onMove={(id, status, b, a) => void actions.moveProject(id, status, b, a)}
+            />
+          )}
+        </main>
+      </div>
       {(openId === null || openProject) && (
         <ProjectDetail
           key={openId ?? 'new'}

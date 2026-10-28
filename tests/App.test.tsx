@@ -1,8 +1,18 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import App from '../src/App'
+import AppRoot from '../src/App'
+import { ThemeProvider } from '../src/ui/theme'
 import type { Project, Step } from '../src/domain/types'
+
+// App renders the theme toggle in the top bar, so it needs the provider (as in main.tsx).
+function App() {
+  return (
+    <ThemeProvider>
+      <AppRoot />
+    </ThemeProvider>
+  )
+}
 
 const reload = vi.fn()
 const signOut = vi.fn()
@@ -42,11 +52,33 @@ beforeEach(() => {
 })
 
 describe('App', () => {
-  it('mostra o título e chama signOut', async () => {
+  it('mostra o produto, o título e chama signOut pela barra superior', async () => {
     render(<App />)
-    expect(screen.getByRole('heading', { name: 'Gerenciador de Projetos' })).toBeInTheDocument()
+    expect(screen.getByText('Gerenciador de Projetos')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Projetos' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tema: Sistema' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Sair' }))
     expect(signOut).toHaveBeenCalled()
+  })
+
+  it('linha de resumo reflete os projetos', () => {
+    const { unmount } = render(<App />)
+    expect(screen.getByText('Nenhum projeto ainda.')).toBeInTheDocument()
+    unmount()
+    state.projects = [{ ...mk('Velho'), due_date: '2000-01-01' }, mk('Sem prazo')]
+    render(<App />)
+    expect(screen.getByText('1 atrasado')).toBeInTheDocument()
+  })
+
+  it('sem resumo enquanto carrega ou com erro', () => {
+    state.loading = true
+    const { unmount } = render(<App />)
+    expect(screen.queryByText('Nenhum projeto ainda.')).not.toBeInTheDocument()
+    unmount()
+    state.loading = false
+    state.loadError = 'x'
+    render(<App />)
+    expect(screen.queryByText('Nenhum projeto ainda.')).not.toBeInTheDocument()
   })
 
   it('loadError mostra mensagem e Recarregar, sem lista vazia', async () => {

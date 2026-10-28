@@ -11,8 +11,6 @@ function renderHeader(view: View) {
       onViewChange={() => {}}
       filters={filters}
       onFiltersChange={() => {}}
-      onNew={() => {}}
-      onSignOut={() => {}}
     />,
   )
 }
@@ -30,5 +28,11 @@ describe('Header', () => {
     expect(screen.queryByRole('checkbox', { name: 'Mostrar concluídos' })).not.toBeInTheDocument()
     expect(screen.queryByRole('combobox', { name: 'Status' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Meus steps' })).toBeInTheDocument()
+  })
+
+  it('Novo projeto e Sair não ficam mais na barra de ferramentas', () => {
+    renderHeader('lista')
+    expect(screen.queryByRole('button', { name: 'Novo projeto' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sair' })).not.toBeInTheDocument()
   })
 })

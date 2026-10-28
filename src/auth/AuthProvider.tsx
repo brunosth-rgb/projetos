@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
       {loading ? (
-        <p className="p-6 text-sm text-gray-500">Carregando…</p>
+        <p className="p-6 text-sm text-muted">Carregando…</p>
       ) : user ? (
         children
       ) : (
