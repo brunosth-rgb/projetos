@@ -1,7 +1,8 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { KanbanView, computeMove, resolveDrop, groupByStatus } from '../../src/components/KanbanView'
+import { KanbanView, computeMove, kanbanCollision, resolveDrop, groupByStatus } from '../../src/components/KanbanView'
+import type { ClientRect, DroppableContainer, UniqueIdentifier } from '@dnd-kit/core'
 import type { Profile, Project, Status } from '../../src/domain/types'
 
 const today = '2026-10-28'
@@ -150,5 +151,57 @@ describe('computeMove', () => {
 
   it('retorna o destino quando muda', () => {
     expect(computeMove(board, 'a', 'column:concluido')).toEqual({ status: 'concluido', beforeId: null, afterId: null })
+  })
+})
+
+describe('kanbanCollision', () => {
+  const rect = (left: number, top: number, width: number, height: number): ClientRect => ({
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+  })
+  // Board 1000px tall. planejado (x 0-300) has cards a (top 10) and b (top 80);
+  // em_execucao (x 320-620) has card x (top 10); concluido (x 640-940) is empty.
+  const rects = new Map<UniqueIdentifier, ClientRect>([
+    ['column:planejado', rect(0, 0, 300, 1000)],
+    ['column:em_execucao', rect(320, 0, 300, 1000)],
+    ['column:concluido', rect(640, 0, 300, 1000)],
+    ['a', rect(5, 10, 290, 60)],
+    ['b', rect(5, 80, 290, 60)],
+    ['x', rect(325, 10, 290, 60)],
+  ])
+  const containers = [...rects.keys()].map(
+    id => ({ id, key: String(id), data: { current: undefined }, disabled: false, node: { current: null }, rect: { current: null } }) as unknown as DroppableContainer,
+  )
+  const args = (pointer: { x: number; y: number } | null, collisionRect: ClientRect) => ({
+    active: { id: 'b', data: { current: undefined }, rect: { current: { initial: null, translated: null } } },
+    collisionRect,
+    droppableRects: rects,
+    droppableContainers: containers,
+    pointerCoordinates: pointer,
+  }) as unknown as Parameters<typeof kanbanCollision>[0]
+
+  it('ponteiro no espaço vazio abaixo do último cartão de outra coluna → a coluna', () => {
+    const r = kanbanCollision(args({ x: 470, y: 100 }, rect(325, 75, 290, 60)))
+    expect(r[0]?.id).toBe('column:em_execucao')
+  })
+
+  it('ponteiro numa coluna vazia mesmo com o retângulo perto de um cartão vizinho → a coluna vazia', () => {
+    const r = kanbanCollision(args({ x: 645, y: 40 }, rect(330, 12, 290, 60)))
+    expect(r[0]?.id).toBe('column:concluido')
+  })
+
+  it('ponteiro sobre um cartão → o cartão, não a coluna', () => {
+    const r = kanbanCollision(args({ x: 470, y: 40 }, rect(325, 10, 290, 60)))
+    expect(r[0]?.id).toBe('x')
+  })
+
+  it('sem coordenadas de ponteiro (teclado) → recorre a closestCorners', () => {
+    const r = kanbanCollision(args(null, rect(325, 12, 290, 60)))
+    expect(r.length).toBeGreaterThan(0)
+    expect(r[0]?.id).toBe('x')
   })
 })

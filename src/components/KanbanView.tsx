@@ -4,10 +4,12 @@ import {
   MouseSensor,
   TouchSensor,
   closestCorners,
+  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
   type Announcements,
+  type CollisionDetection,
   type DragEndEvent,
   type UniqueIdentifier,
 } from '@dnd-kit/core'
@@ -90,6 +92,23 @@ export function computeMove(
   const cur = resolveDrop(columns, activeId, null)
   const same = next.status === cur.status && next.beforeId === cur.beforeId && next.afterId === cur.afterId
   return same ? null : next
+}
+
+const isColumnId = (id: UniqueIdentifier) => String(id).startsWith(COLUMN_PREFIX)
+
+/**
+ * Multiple-containers collision: the droppable under the pointer wins. A card under
+ * the pointer beats its (enclosing) column; empty space inside a column resolves to
+ * the column. Without pointer coordinates (keyboard) or in a gap, fall back to
+ * closestCorners.
+ */
+export const kanbanCollision: CollisionDetection = args => {
+  const hits = pointerWithin(args)
+  if (hits.length > 0) {
+    const card = hits.find(c => !isColumnId(c.id))
+    return [card ?? hits[0]]
+  }
+  return closestCorners(args)
 }
 
 function highlightOf(p: Project, today: string) {
@@ -204,7 +223,7 @@ export function KanbanView({
   const titleOf = (id: UniqueIdentifier) => projects.find(p => p.id === id)?.title ?? String(id)
   const targetName = (id: UniqueIdentifier) => {
     const s = String(id)
-    return s.startsWith(COLUMN_PREFIX) ? STATUS_LABEL[s.slice(COLUMN_PREFIX.length) as Status] : titleOf(id)
+    return isColumnId(s) ? STATUS_LABEL[s.slice(COLUMN_PREFIX.length) as Status] : titleOf(id)
   }
   const announcements: Announcements = {
     onDragStart: ({ active }) => `Projeto ${titleOf(active.id)} selecionado.`,
@@ -226,7 +245,7 @@ export function KanbanView({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={kanbanCollision}
       onDragEnd={handleDragEnd}
       accessibility={{
         announcements,
