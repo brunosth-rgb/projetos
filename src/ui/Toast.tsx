@@ -41,7 +41,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             role="status"
-            className="pointer-events-auto flex w-full items-center gap-3 rounded-card border border-border bg-surface py-2 pr-2 pl-4 text-sm text-ink shadow-[0_8px_24px_rgb(0_0_0/0.12)]"
+            className="pointer-events-auto flex w-full items-center gap-3 rounded-card border border-border bg-surface py-2 pr-2 pl-4 text-sm text-ink shadow-float"
           >
             <span className="min-w-0 flex-1 py-1">{t.message}</span>
             {t.retry && (

@@ -34,6 +34,8 @@ npm test          # testes unitários e de componentes
 npm run test:rls  # testes de RLS no PGlite
 ```
 
+Pré-visualização da interface (só em desenvolvimento, com dados de exemplo e sem Supabase): `npm run preview:ui`; parâmetros na URL: `?theme=light|dark|system`, `?view=lista|kanban`, `?login` (começa deslogado) e `?empty` (sem projetos). O `npm run build` também verifica os tipos de `dev/`.
+
 Para conferir o build como no Pages: `VITE_BASE=/gerenciador/ npm run build` (com as duas variáveis do Supabase definidas) e `npx vite preview --base /gerenciador/`.
 
 O prefixo `VAR=valor npm run build` funciona no bash, mas não no PowerShell. No PowerShell, defina a variável antes: `$env:VITE_BASE='/gerenciador/'; npm run build`. No Git Bash do Windows, um valor que começa com `/` (como `VITE_BASE=/gerenciador/`) pode ser convertido em um caminho do Windows; nesse caso use `MSYS_NO_PATHCONV=1 VITE_BASE=/gerenciador/ npm run build` ou defina a variável pelo PowerShell.

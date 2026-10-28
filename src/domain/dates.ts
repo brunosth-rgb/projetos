@@ -1,3 +1,5 @@
+import { isDatePast, isDateWithin3Days } from './projects'
+
 // Date-only helpers for display. Dates are 'YYYY-MM-DD' strings; nothing here parses them as UTC
 // instants, so the local calendar day never shifts.
 
@@ -45,6 +47,7 @@ export function dueLabel(due: string | null, today: string): { date: string; rel
   const n = daysBetween(today, due)
   const relative =
     n === 0 ? 'hoje' : n === 1 ? 'amanhã' : n === -1 ? 'ontem' : n > 1 ? `em ${n} dias` : `há ${-n} dias`
-  const tone: DueTone = n < 0 ? 'overdue' : n <= 3 ? 'soon' : 'none'
+  // Same date rules as isOverdue/isDueSoon (single source in projects.ts).
+  const tone: DueTone = isDatePast(due, today) ? 'overdue' : isDateWithin3Days(due, today) ? 'soon' : 'none'
   return { date: shortDate(due), relative, tone }
 }

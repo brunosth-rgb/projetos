@@ -12,6 +12,7 @@
   --border: #e1e5ea;
   --rule: #eceff3;
   --control: #cdd2d9;
+  --control-strong: #8a9099; /* checkbox/radio edges: >= 3:1 on --surface */
   --text: #0a0a0a;
   --muted: #5f6368;
   --faint: #6b6f76;
@@ -55,6 +56,7 @@
   --border: #2e2e2e;
   --rule: #232323;
   --control: #444444;
+  --control-strong: #7a7a7a;
   --text: #ffffff;
   --muted: #b4b4b4;
   --faint: #949494;
@@ -62,10 +64,10 @@
   --primary-ink: #111111;
   --data: #5b9bf0;
   --positive: #3fc07a;
-  --negative: #e5566f;
+  --negative: #e8607a; /* 4.72:1 on --active, 5.50:1 on --surface */
   --warning: #e0a458;
   --pill-negative-bg: #2c1a20;
-  --pill-negative-ink: #e5566f;
+  --pill-negative-ink: #e8607a;
   --pill-warning-bg: #2a2112;
   --pill-warning-ink: #e0a458;
   --pill-warning-border: #4a3a1c;
@@ -76,7 +78,7 @@
 
   --tint-s: 28%;
   --tint-l: 25%;
-  --float-shadow: 0 8px 28px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(255 255 255 / 0.02);
+  --float-shadow: 0 8px 28px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
   --scrim: rgb(0 0 0 / 0.4);
 }
 
@@ -91,6 +93,7 @@
   --color-border: var(--border);
   --color-rule: var(--rule);
   --color-control: var(--control);
+  --color-control-strong: var(--control-strong);
   --color-ink: var(--text);
   --color-muted: var(--muted);
   --color-faint: var(--faint);

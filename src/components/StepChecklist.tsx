@@ -18,22 +18,25 @@ const ghostBtn =
 
 function Check({ checked, label, onChange }: { checked: boolean; label: string; onChange: (v: boolean) => void }) {
   return (
-    <span className="relative inline-flex size-[18px] shrink-0 max-sm:size-6">
-      <input
-        type="checkbox"
-        aria-label={label}
-        checked={checked}
-        onChange={e => onChange(e.target.checked)}
-        className="peer size-full cursor-pointer appearance-none rounded-[4px] border border-control bg-surface transition-colors checked:border-primary checked:bg-primary hover:border-faint"
-      />
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 16 16"
-        className="pointer-events-none absolute inset-0 m-auto hidden size-3 text-primary-ink peer-checked:block"
-      >
-        <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </span>
+    // The label is an invisible padded hit area: 44px on phones (24 + 2 x 10), no layout shift.
+    <label className="relative inline-flex shrink-0 cursor-pointer max-sm:-m-2.5 max-sm:p-2.5">
+      <span className="relative inline-flex size-[18px] max-sm:size-6">
+        <input
+          type="checkbox"
+          aria-label={label}
+          checked={checked}
+          onChange={e => onChange(e.target.checked)}
+          className="peer size-full cursor-pointer appearance-none rounded-[4px] border border-control-strong bg-surface transition-colors checked:border-primary checked:bg-primary hover:border-ink"
+        />
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 16 16"
+          className="pointer-events-none absolute inset-0 m-auto hidden size-3 text-primary-ink peer-checked:block"
+        >
+          <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    </label>
   )
 }
 

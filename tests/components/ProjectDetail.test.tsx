@@ -151,6 +151,16 @@ describe('StepChecklist', () => {
     expect(actions.editStep).toHaveBeenCalledWith('a', { done: true })
   })
 
+  it('the checkbox label is a hit area that toggles without renaming the checkbox', async () => {
+    const { actions } = setup(mk({ steps }))
+    const box = screen.getByRole('checkbox', { name: 'Primeiro' })
+    const hit = box.closest('label') as HTMLElement
+    expect(hit).toHaveClass('max-sm:p-2.5')
+    await userEvent.click(hit)
+    expect(actions.editStep).toHaveBeenCalledWith('a', { done: true })
+    expect(box).toHaveClass('border-control-strong')
+  })
+
   it('sets and clears the assignee', async () => {
     const { actions } = setup(mk({ steps: [step({ id: 'a', title: 'Primeiro', assignee_id: 'u1' })] }))
     const sel = screen.getByLabelText('Responsável por Primeiro')

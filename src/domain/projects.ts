@@ -20,13 +20,22 @@ export function addDays(date: string, n: number): string {
   return fmt(new Date(y, m - 1, d + n))
 }
 
+/** Date-only rules shared by isOverdue/isDueSoon and the due-date label. */
+export function isDatePast(due: string, today: string): boolean {
+  return due < today
+}
+
+export function isDateWithin3Days(due: string, today: string): boolean {
+  return due >= today && due <= addDays(today, 3)
+}
+
 export function isOverdue(p: Project, today: string): boolean {
-  return p.due_date !== null && p.status !== 'concluido' && p.due_date < today
+  return p.due_date !== null && p.status !== 'concluido' && isDatePast(p.due_date, today)
 }
 
 export function isDueSoon(p: Project, today: string): boolean {
   if (p.due_date === null || p.status === 'concluido') return false
-  return p.due_date >= today && p.due_date <= addDays(today, 3)
+  return isDateWithin3Days(p.due_date, today)
 }
 
 export function stepProgress(p: Project): { done: number; total: number } {

@@ -11,10 +11,6 @@ export function formatDate(d: string): string {
   return `${day}/${m}/${y}`
 }
 
-export function pendingAssignees(project: Project, profiles: Profile[]): string[] {
-  return pendingProfiles(project, profiles).map(profileLabel)
-}
-
 /** Profiles with at least one pending step in the project, deduplicated, in step order. */
 export function pendingProfiles(project: Project, profiles: Profile[]): Profile[] {
   const seen = new Map<string, Profile>()
