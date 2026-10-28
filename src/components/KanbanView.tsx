@@ -111,15 +111,8 @@ export const kanbanCollision: CollisionDetection = args => {
   return closestCorners(args)
 }
 
-function highlightOf(p: Project, today: string) {
-  const state = isOverdue(p, today) ? 'overdue' : isDueSoon(p, today) ? 'due-soon' : undefined
-  const cls =
-    state === 'overdue'
-      ? 'border-red-500 bg-red-50'
-      : state === 'due-soon'
-        ? 'border-amber-500 bg-amber-50'
-        : 'border-slate-200 bg-white'
-  return { state, cls }
+function dueState(p: Project, today: string) {
+  return isOverdue(p, today) ? 'overdue' : isDueSoon(p, today) ? 'due-soon' : undefined
 }
 
 function Card({
@@ -134,7 +127,7 @@ function Card({
   onOpen: (id: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: project.id })
-  const { state, cls } = highlightOf(project, today)
+  const state = dueState(project, today)
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     listeners?.onKeyDown?.(e)
     if (!isDragging && e.key === 'Enter') {
@@ -151,11 +144,15 @@ function Card({
       onClick={() => onOpen(project.id)}
       data-state={state}
       style={{ transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined, transition }}
-      className={`flex cursor-grab flex-col gap-2 rounded border border-l-4 p-3 text-left ${cls} ${
-        isDragging ? 'opacity-50' : ''
+      // Flat at rest; only the card being dragged floats (shadow + raised stacking).
+      className={`flex cursor-grab flex-col gap-3 rounded-card border bg-surface p-3 text-left transition-[border-color,box-shadow] duration-150 ${
+        isDragging ? 'relative z-10 cursor-grabbing border-control shadow-float' : 'border-border hover:border-control'
       }`}
     >
-      <span className="font-medium">{project.title}</span>
+      <span className="min-w-0">
+        <span className="block font-medium break-words">{project.title}</span>
+        {project.description && <span className="mt-0.5 line-clamp-2 block text-xs text-muted">{project.description}</span>}
+      </span>
       <ProjectMeta project={project} profiles={profiles} today={today} />
     </div>
   )
@@ -176,18 +173,30 @@ function Column({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `${COLUMN_PREFIX}${status}` })
   return (
-    <section aria-label={STATUS_LABEL[status]} className="flex min-w-64 flex-1 flex-col rounded bg-slate-100 p-2">
-      <h2 className="mb-2 px-1 text-sm font-semibold text-slate-700">
-        {STATUS_LABEL[status]} <span className="font-normal text-slate-500">({projects.length})</span>
+    // Columns are not boxed: a bare header over the card stack, on the ground.
+    // Desktop: 3 equal columns in the 1152px canvas, 3 x 376 + 2 x 12 (gap-3) = 1152.
+    // Phone: 85% wide so the next column peeks in, snapping column by column.
+    <section
+      aria-label={STATUS_LABEL[status]}
+      className="flex min-w-0 shrink-0 snap-start flex-col max-sm:w-[85%] sm:min-w-[232px] sm:flex-1 sm:basis-0"
+    >
+      <h2 className="mb-2 flex h-8 items-center gap-2 text-sm font-medium">
+        {STATUS_LABEL[status]}
+        <span className="num font-normal text-muted">{projects.length}</span>
       </h2>
       <SortableContext items={projects.map(p => p.id)} strategy={verticalListSortingStrategy}>
         <div
           ref={setNodeRef}
-          className={`flex min-h-24 flex-1 flex-col gap-2 rounded p-1 ${isOver ? 'bg-slate-200' : ''}`}
+          className={`-mx-1 flex min-h-24 flex-1 flex-col gap-2 rounded-card p-1 transition-colors ${isOver ? 'bg-active' : ''}`}
         >
           {projects.map(p => (
             <Card key={p.id} project={p} profiles={profiles} today={today} onOpen={onOpen} />
           ))}
+          {projects.length === 0 && (
+            <div className="flex h-20 items-center justify-center rounded-card border border-dashed border-control text-sm text-muted">
+              Nenhum projeto
+            </div>
+          )}
         </div>
       </SortableContext>
     </section>
@@ -255,7 +264,7 @@ export function KanbanView({
         },
       }}
     >
-      <div className="flex gap-3 overflow-x-auto pb-2">
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 max-sm:-mx-4 max-sm:scroll-px-4 max-sm:px-4 sm:snap-none">
         {STATUSES.map(s => (
           <Column key={s} status={s} projects={columns[s]} profiles={profiles} today={today} onOpen={onOpen} />
         ))}

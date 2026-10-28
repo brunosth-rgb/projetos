@@ -70,7 +70,7 @@ describe('KanbanView', () => {
     const card = screen.getByRole('button', { name: /Atrasado/ })
     expect(card).toHaveAttribute('data-state', 'overdue')
     expect(within(card).getByText('Alta')).toBeInTheDocument()
-    expect(within(card).getByText('01/10/2026')).toBeInTheDocument()
+    expect(within(card).getByText('01/10')).toBeInTheDocument()
   })
 
   it('clique e Enter abrem o projeto', async () => {
@@ -98,6 +98,16 @@ describe('KanbanView', () => {
     expect(await screen.findByText(/Projeto P1 solto/)).toBeInTheDocument()
     expect(onMove).not.toHaveBeenCalled()
     expect(onOpen).not.toHaveBeenCalled()
+  })
+
+  it('coluna vazia mostra o espaço "Nenhum projeto" e o cabeçalho traz a contagem', () => {
+    render(<KanbanView projects={[mk({ id: 'P1' })]} profiles={profiles} today={today} onOpen={() => {}} onMove={() => {}} />)
+    const done = screen.getByRole('region', { name: 'Concluído' })
+    expect(within(done).getByText('Nenhum projeto')).toBeInTheDocument()
+    expect(within(done).getByRole('heading')).toHaveTextContent('Concluído0')
+    const plan = screen.getByRole('region', { name: 'Planejado' })
+    expect(within(plan).queryByText('Nenhum projeto')).not.toBeInTheDocument()
+    expect(within(plan).getByRole('heading')).toHaveTextContent('Planejado1')
   })
 
   it('o contêiner das colunas rola horizontalmente', () => {

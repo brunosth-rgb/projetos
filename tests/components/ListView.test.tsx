@@ -71,7 +71,7 @@ describe('ListView', () => {
     )
     expect(screen.getAllByText('0/0')).toHaveLength(2)
     expect(screen.getByText('Sem prazo')).toBeTruthy()
-    expect(screen.getByText('05/11/2026')).toBeTruthy()
+    expect(screen.getByText('05/11')).toBeTruthy()
     expect(screen.getByText('Crítica')).toBeTruthy()
   })
 
@@ -98,6 +98,27 @@ describe('ListView', () => {
     expect(screen.getAllByText(/bia@x\.com/)).toHaveLength(1)
     expect(screen.queryByText(/Ana/)).toBeNull()
     expect(screen.getByText('1/3')).toBeTruthy()
+  })
+
+  it('prazo mostra data curta e texto relativo; responsáveis viram iniciais com nome completo', () => {
+    const ps = [
+      mk({ id: 'Hoje', due_date: '2026-10-28', steps: [step({ id: 's1', assignee_id: 'u1' })] }),
+      mk({ id: 'Depois', due_date: '2026-11-02' }),
+      mk({ id: 'Antes', due_date: '2026-10-26' }),
+    ]
+    render(<ListView projects={ps} profiles={profiles} today={today} onOpen={() => {}} />)
+    expect(screen.getByText('hoje')).toBeTruthy()
+    expect(screen.getByText('em 5 dias')).toBeTruthy()
+    expect(screen.getByText('há 2 dias')).toHaveClass('text-negative')
+    expect(screen.getByTitle('Ana')).toHaveTextContent('A')
+  })
+
+  it('status: pílula só para Em execução, texto discreto para os outros', () => {
+    const ps = [mk({ id: 'R' }), mk({ id: 'P', status: 'planejado' }), mk({ id: 'C', status: 'concluido' })]
+    render(<ListView projects={ps} profiles={profiles} today={today} onOpen={() => {}} />)
+    expect(screen.getByText('Em execução')).toHaveClass('bg-pill-neutral-bg')
+    expect(screen.getByText('Planejado')).toHaveClass('text-muted')
+    expect(screen.getByText('Concluído')).toHaveClass('text-muted')
   })
 
   it('clicar chama onOpen e lista vazia mostra mensagem', async () => {

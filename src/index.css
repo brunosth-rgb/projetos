@@ -37,6 +37,13 @@
   --pad: 24px;
   --control-height: 36px;
   --row-height: 48px;
+
+  /* Person tints (initials circles): hue comes from src/domain/people.ts, these set how pale. */
+  --tint-s: 62%;
+  --tint-l: 90%;
+  /* Only for things that float: side sheet, dragged card, popovers, toasts. */
+  --float-shadow: 0 8px 24px rgb(0 0 0 / 0.12), 0 1px 3px rgb(0 0 0 / 0.08);
+  --scrim: rgb(0 0 0 / 0.4);
 }
 
 :root[data-theme="dark"] {
@@ -66,6 +73,11 @@
   --pill-neutral-ink: #d0d0d0;
   --pill-positive-bg: #172a1d;
   --pill-positive-ink: #3fc07a;
+
+  --tint-s: 28%;
+  --tint-l: 25%;
+  --float-shadow: 0 8px 28px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(255 255 255 / 0.02);
+  --scrim: rgb(0 0 0 / 0.4);
 }
 
 /* Expose the tokens to Tailwind: bg-surface, text-ink, text-muted, border-border, rounded-card... */
@@ -97,6 +109,8 @@
   --color-pill-neutral-ink: var(--pill-neutral-ink);
   --color-pill-positive-bg: var(--pill-positive-bg);
   --color-pill-positive-ink: var(--pill-positive-ink);
+  --color-scrim: var(--scrim);
+  --shadow-float: var(--float-shadow);
 }
 
 @theme {
@@ -151,6 +165,37 @@
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Pale per-person tint for initials circles; set --hue inline. */
+  .tint {
+    background-color: hsl(var(--hue, 210) var(--tint-s) var(--tint-l));
+    color: var(--text);
+  }
+
+  .sheet-in {
+    animation: sheet-in 160ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .fade-in {
+    animation: fade-in 120ms ease-out;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
