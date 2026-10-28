@@ -181,3 +181,50 @@ describe('StepChecklist', () => {
     expect(actions.editStep).toHaveBeenCalledWith('a', { position: 2500 })
   })
 })
+
+describe('ProjectDetail closing', () => {
+  it('flushes an unblurred title edit on Escape', async () => {
+    const { actions, onClose } = setup(mk())
+    const input = screen.getByLabelText('Título')
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Digitado')
+    await userEvent.keyboard('{Escape}')
+    expect(actions.editProject).toHaveBeenCalledTimes(1)
+    expect(actions.editProject).toHaveBeenCalledWith('p1', { title: 'Digitado' })
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('flushes an unblurred title edit on backdrop mousedown', async () => {
+    const { actions, onClose } = setup(mk())
+    const input = screen.getByLabelText('Título')
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Digitado')
+    await userEvent.pointer({ keys: '[MouseLeft>]', target: screen.getByRole('dialog').parentElement as HTMLElement })
+    expect(actions.editProject).toHaveBeenCalledTimes(1)
+    expect(actions.editProject).toHaveBeenCalledWith('p1', { title: 'Digitado' })
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('does not save an empty title on Escape but still closes', async () => {
+    const { actions, onClose } = setup(mk())
+    await userEvent.clear(screen.getByLabelText('Título'))
+    await userEvent.keyboard('{Escape}')
+    expect(actions.editProject).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('create mode: dirty form ignores backdrop but closes on Escape', async () => {
+    const { onClose } = setup(null)
+    await userEvent.type(screen.getByLabelText('Título'), 'Algo')
+    await userEvent.pointer({ keys: '[MouseLeft>]', target: screen.getByRole('dialog').parentElement as HTMLElement })
+    expect(onClose).not.toHaveBeenCalled()
+    await userEvent.keyboard('{Escape}')
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('create mode: pristine form closes on backdrop', async () => {
+    const { onClose } = setup(null)
+    await userEvent.pointer({ keys: '[MouseLeft>]', target: screen.getByRole('dialog').parentElement as HTMLElement })
+    expect(onClose).toHaveBeenCalled()
+  })
+})

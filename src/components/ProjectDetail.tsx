@@ -26,6 +26,8 @@ export function ProjectDetail({ project, profiles, actions, onClose }: Props) {
   const [dueDate, setDueDate] = useState(project?.due_date ?? '')
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
+  // Last values sent to actions, so flush-on-close followed by blur does not save twice.
+  const sent = useRef<{ title?: string; description?: string }>({})
 
   // Keep fields in sync when the project changes underneath (optimistic update / rollback).
   const pTitle = project?.title
@@ -33,8 +35,8 @@ export function ProjectDetail({ project, profiles, actions, onClose }: Props) {
   const pStatus = project?.status
   const pUrgency = project?.urgency
   const pDue = project?.due_date
-  useEffect(() => { if (pTitle !== undefined) setTitle(pTitle) }, [pTitle])
-  useEffect(() => { if (pDescription !== undefined) setDescription(pDescription) }, [pDescription])
+  useEffect(() => { if (pTitle !== undefined) { setTitle(pTitle); sent.current.title = undefined } }, [pTitle])
+  useEffect(() => { if (pDescription !== undefined) { setDescription(pDescription); sent.current.description = undefined } }, [pDescription])
   useEffect(() => { if (pStatus !== undefined) setStatus(pStatus) }, [pStatus])
   useEffect(() => { if (pUrgency !== undefined) setUrgency(pUrgency) }, [pUrgency])
   useEffect(() => { if (pDue !== undefined) setDueDate(pDue ?? '') }, [pDue])
@@ -43,30 +45,51 @@ export function ProjectDetail({ project, profiles, actions, onClose }: Props) {
     dialogRef.current?.focus()
   }, [])
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
-
-  const saveTitle = () => {
+  const flushTitle = () => {
     if (!project) return
     const t = title.trim()
-    if (!t) {
-      setTitle(project.title)
-      return
+    if (t && t !== project.title && t !== sent.current.title) {
+      sent.current.title = t
+      void actions.editProject(project.id, { title: t })
     }
-    if (t !== project.title) void actions.editProject(project.id, { title: t })
-    setTitle(t)
   }
-
-  const saveDescription = () => {
-    if (project && description !== project.description) {
+  const flushDescription = () => {
+    if (project && description !== project.description && description !== sent.current.description) {
+      sent.current.description = description
       void actions.editProject(project.id, { description })
     }
   }
+  const handleClose = () => {
+    flushTitle()
+    flushDescription()
+    onClose()
+  }
+  const closeRef = useRef(handleClose)
+  closeRef.current = handleClose
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeRef.current()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+
+  const createDirty =
+    creating &&
+    (title !== '' || description !== '' || status !== 'planejado' || urgency !== 'media' || dueDate !== '')
+
+  const saveTitle = () => {
+    if (!project) return
+    if (!title.trim()) {
+      setTitle(project.title)
+      return
+    }
+    flushTitle()
+    setTitle(title.trim())
+  }
+
+  const saveDescription = flushDescription
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,7 +119,7 @@ export function ProjectDetail({ project, profiles, actions, onClose }: Props) {
     <div
       className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center"
       onMouseDown={e => {
-        if (e.target === e.currentTarget) onClose()
+        if (e.target === e.currentTarget && !createDirty) handleClose()
       }}
     >
       <div
@@ -114,7 +137,7 @@ export function ProjectDetail({ project, profiles, actions, onClose }: Props) {
           <button
             type="button"
             aria-label="Fechar"
-            onClick={onClose}
+            onClick={handleClose}
             className="min-h-9 min-w-9 rounded hover:bg-slate-100"
           >
             ✕
