@@ -14,7 +14,8 @@ export function todayLocal(now: Date = new Date()): string {
   return fmt(now)
 }
 
-function addDays(date: string, n: number): string {
+/** YYYY-MM-DD plus n days, in local calendar terms (no UTC shift). */
+export function addDays(date: string, n: number): string {
   const [y, m, d] = date.split('-').map(Number)
   return fmt(new Date(y, m - 1, d + n))
 }
