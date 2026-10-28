@@ -38,5 +38,4 @@ export type NewProjectInput = {
   urgency: Urgency
   due_date: string | null
   status: Status
-  position: number
 }

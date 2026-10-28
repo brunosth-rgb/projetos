@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../src/App'
@@ -103,6 +103,41 @@ describe('App', () => {
     render(<App />)
     act(() => { document.dispatchEvent(new Event('visibilitychange')) })
     expect(reload).toHaveBeenCalled()
+  })
+
+  it('kanban com filtros padrão mostra concluídos na coluna Concluído', async () => {
+    state.projects = [{ ...mk('Feito'), status: 'concluido' }, mk('Rodando')]
+    render(<App />)
+    expect(screen.queryByText('Feito')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Kanban' }))
+    expect(within(screen.getByRole('region', { name: 'Concluído' })).getByText('Feito')).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'Em execução' })).getByText('Rodando')).toBeInTheDocument()
+  })
+
+  it('kanban ignora o filtro de status salvo, mas aplica Meus steps', () => {
+    localStorage.setItem('gp.view', '"kanban"')
+    localStorage.setItem('gp.filters', '{"showDone":false,"statuses":["planejado"],"mine":true}')
+    state.projects = [
+      { ...mk('FeitoMeu', [step('a', 'u1')]), status: 'concluido' },
+      mk('RodandoMeu', [step('b', 'u1')]),
+      mk('RodandoOutro', [step('c', 'u2')]),
+    ]
+    render(<App />)
+    expect(within(screen.getByRole('region', { name: 'Concluído' })).getByText('FeitoMeu')).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'Em execução' })).getByText('RodandoMeu')).toBeInTheDocument()
+    expect(screen.queryByText('RodandoOutro')).not.toBeInTheDocument()
+  })
+
+  it('mantém o detalhe aberto durante uma recarga em segundo plano', async () => {
+    state.projects = [mk('Aberto')]
+    const { rerender } = render(<App />)
+    await userEvent.click(screen.getByRole('button', { name: /Aberto/ }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    state.loading = true
+    rerender(<App />)
+    state.loading = false
+    rerender(<App />)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
   it('Novo projeto abre o detalhe de criação', async () => {

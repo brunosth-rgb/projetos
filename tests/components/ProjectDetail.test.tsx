@@ -121,7 +121,6 @@ describe('ProjectDetail', () => {
       urgency: 'media',
       due_date: null,
       status: 'planejado',
-      position: 1000,
     })
     expect(onClose).toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: 'Apagar projeto' })).not.toBeInTheDocument()

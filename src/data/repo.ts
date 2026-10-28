@@ -10,6 +10,7 @@ export async function listProjects(): Promise<Project[]> {
     .from('projects')
     .select('*, steps(*)')
     .order('position')
+    .order('created_at')
     .order('position', { referencedTable: 'steps' })
   check(error)
   return (data ?? []) as Project[]
@@ -21,7 +22,7 @@ export async function listProfiles(): Promise<Profile[]> {
   return (data ?? []) as Profile[]
 }
 
-export async function createProject(input: NewProjectInput): Promise<Project> {
+export async function createProject(input: NewProjectInput & { position: number }): Promise<Project> {
   const { data, error } = await supabase
     .from('projects')
     .insert(input)

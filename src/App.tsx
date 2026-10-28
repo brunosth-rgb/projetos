@@ -84,11 +84,14 @@ export default function App() {
     if (missing) setOpenId(undefined)
   }, [missing])
 
+  const mineUserId = filters.mine && user ? user.id : null
   const visibleProjects = filterProjects(projects, {
     showDone: filters.showDone,
     statuses: filters.statuses,
-    mineUserId: filters.mine && user ? user.id : null,
+    mineUserId,
   })
+  // The kanban always shows every column in full; only "Meus steps" applies there.
+  const kanbanProjects = filterProjects(projects, { showDone: true, statuses: null, mineUserId })
 
   return (
     <div className="min-h-screen">
@@ -120,7 +123,7 @@ export default function App() {
           <ListView projects={visibleProjects} profiles={profiles} today={today} onOpen={setOpenId} />
         ) : (
           <KanbanView
-            projects={visibleProjects}
+            projects={kanbanProjects}
             profiles={profiles}
             today={today}
             onOpen={setOpenId}

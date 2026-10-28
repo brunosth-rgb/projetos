@@ -32,32 +32,36 @@ export function Header({
           Kanban
         </button>
       </div>
-      <label className="flex items-center gap-1 text-sm">
-        <input
-          type="checkbox"
-          checked={filters.showDone}
-          onChange={e => onFiltersChange({ ...filters, showDone: e.target.checked })}
-        />
-        Mostrar concluídos
-      </label>
-      <label className="flex items-center gap-1 text-sm">
-        Status
-        <select
-          className="rounded border border-slate-300 px-2 py-1"
-          value={filters.statuses && filters.statuses.length === 1 ? filters.statuses[0] : ''}
-          onChange={e => {
-            const v = e.target.value as Status | ''
-            onFiltersChange({ ...filters, statuses: v ? [v] : null })
-          }}
-        >
-          <option value="">Todos</option>
-          {(Object.keys(STATUS_LABEL) as Status[]).map(s => (
-            <option key={s} value={s}>
-              {STATUS_LABEL[s]}
-            </option>
-          ))}
-        </select>
-      </label>
+      {view === 'lista' && (
+        <>
+          <label className="flex items-center gap-1 text-sm">
+            <input
+              type="checkbox"
+              checked={filters.showDone}
+              onChange={e => onFiltersChange({ ...filters, showDone: e.target.checked })}
+            />
+            Mostrar concluídos
+          </label>
+          <label className="flex items-center gap-1 text-sm">
+            Status
+            <select
+              className="rounded border border-slate-300 px-2 py-1"
+              value={filters.statuses && filters.statuses.length === 1 ? filters.statuses[0] : ''}
+              onChange={e => {
+                const v = e.target.value as Status | ''
+                onFiltersChange({ ...filters, statuses: v ? [v] : null })
+              }}
+            >
+              <option value="">Todos</option>
+              {(Object.keys(STATUS_LABEL) as Status[]).map(s => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      )}
       <button
         type="button"
         aria-pressed={filters.mine}

@@ -30,6 +30,13 @@ describe('sortProjects', () => {
     const b = makeProject({ id: 'b', urgency: 'alta', due_date: '2026-12-01' })
     expect(sortProjects([a, b]).map(p => p.id)).toEqual(['b', 'a'])
   })
+  it('empate de urgência e prazo ordena por created_at crescente', () => {
+    const a = makeProject({ id: 'a', urgency: 'alta', due_date: null, created_at: '2026-10-02T00:00:00Z' })
+    const b = makeProject({ id: 'b', urgency: 'alta', due_date: null, created_at: '2026-10-01T00:00:00Z' })
+    const c = makeProject({ id: 'c', urgency: 'alta', due_date: '2026-11-01', created_at: '2026-10-03T00:00:00Z' })
+    const d = makeProject({ id: 'd', urgency: 'alta', due_date: '2026-11-01', created_at: '2026-10-01T00:00:00Z' })
+    expect(sortProjects([a, b, c, d]).map(p => p.id)).toEqual(['d', 'c', 'b', 'a'])
+  })
 })
 
 describe('isOverdue', () => {
@@ -77,6 +84,10 @@ describe('filterProjects', () => {
   it('statuses filter', () => {
     const ps = [makeProject({ id: 'a', status: 'planejado' }), makeProject({ id: 'b' })]
     expect(filterProjects(ps, { ...base, statuses: ['planejado'] }).map(p => p.id)).toEqual(['a'])
+  })
+  it('status Concluído explícito vence showDone false', () => {
+    const ps = [makeProject({ id: 'a' }), makeProject({ id: 'b', status: 'concluido' })]
+    expect(filterProjects(ps, { ...base, showDone: false, statuses: ['concluido'] }).map(p => p.id)).toEqual(['b'])
   })
   it('mine keeps only pending steps of user', () => {
     const ps = [

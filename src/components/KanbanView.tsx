@@ -16,7 +16,7 @@ import {
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { KeyboardEvent } from 'react'
 import type { Profile, Project, Status } from '../domain/types'
-import { isDueSoon, isOverdue } from '../domain/projects'
+import { compareCreatedAt, isDueSoon, isOverdue } from '../domain/projects'
 import { STATUS_LABEL } from '../ui/labels'
 import { ProjectMeta } from './ProjectMeta'
 
@@ -32,7 +32,7 @@ export interface DropResult {
 export function groupByStatus(projects: Project[]): Record<Status, Project[]> {
   const cols: Record<Status, Project[]> = { planejado: [], em_execucao: [], concluido: [] }
   for (const p of projects) cols[p.status].push(p)
-  for (const s of STATUSES) cols[s].sort((a, b) => a.position - b.position)
+  for (const s of STATUSES) cols[s].sort((a, b) => a.position - b.position || compareCreatedAt(a, b))
   return cols
 }
 

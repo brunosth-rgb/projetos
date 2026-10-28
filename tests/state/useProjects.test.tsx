@@ -55,6 +55,7 @@ describe('useProjects', () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.loadError).not.toBeNull()
     expect(result.current.projects).toEqual([])
+    expect(pushToast).not.toHaveBeenCalled()
   })
 
   it('editProject faz rollback e avisa com retry', async () => {
@@ -141,11 +142,66 @@ describe('useProjects', () => {
     repo.createProject.mockRejectedValue(new Error('x'))
     await act(() =>
       result.current.actions.addProject({
-        title: 'N', urgency: 'baixa', due_date: null, status: 'planejado', position: 1000,
+        title: 'N', urgency: 'baixa', due_date: null, status: 'planejado',
       }),
     )
     expect(result.current.projects).toHaveLength(0)
     expect(pushToast).toHaveBeenCalled()
+  })
+
+  it('addProject em coluna vazia usa position 1000', async () => {
+    const { result } = await setup([mkProject({ id: 'p1', status: 'em_execucao', position: 7000 })])
+    repo.createProject.mockImplementation(async (input: object) => mkProject({ id: 'srv', ...input }))
+    await act(() =>
+      result.current.actions.addProject({ title: 'N', urgency: 'baixa', due_date: null, status: 'planejado' }),
+    )
+    expect(repo.createProject.mock.calls[0][0].position).toBe(1000)
+  })
+
+  it('dois projetos novos no mesmo status recebem positions diferentes e crescentes', async () => {
+    const { result } = await setup([
+      mkProject({ id: 'p1', status: 'planejado', position: 2500 }),
+      mkProject({ id: 'p2', status: 'em_execucao', position: 9000 }),
+    ])
+    let n = 0
+    repo.createProject.mockImplementation(async (input: object) => mkProject({ id: `srv${++n}`, ...input }))
+    const input = { title: 'N', urgency: 'baixa' as const, due_date: null, status: 'planejado' as const }
+    await act(async () => {
+      await Promise.all([result.current.actions.addProject(input), result.current.actions.addProject(input)])
+    })
+    const [first, second] = repo.createProject.mock.calls.map(c => c[0].position)
+    expect(first).toBe(3500)
+    expect(second).toBe(4500)
+    const planned = result.current.projects.filter(p => p.status === 'planejado').map(p => p.position)
+    expect(planned).toEqual([2500, 3500, 4500])
+  })
+
+  it('falha no reload depois de carregar mantém projetos, sem loadError, e avisa com retry', async () => {
+    const { result } = await setup([mkProject()])
+    repo.listProjects.mockRejectedValueOnce(new Error('rede'))
+    await act(() => result.current.reload())
+    expect(result.current.projects).toHaveLength(1)
+    expect(result.current.profiles).toEqual([profile])
+    expect(result.current.loadError).toBeNull()
+    expect(result.current.loading).toBe(false)
+    expect(pushToast).toHaveBeenCalledWith({
+      message: 'Não foi possível atualizar os projetos.',
+      retry: expect.any(Function),
+    })
+    repo.listProjects.mockResolvedValue([mkProject(), mkProject({ id: 'p2' })])
+    await act(async () => { pushToast.mock.calls[0][0].retry() })
+    await waitFor(() => expect(result.current.projects).toHaveLength(2))
+  })
+
+  it('falha no reload antes de qualquer carga com sucesso mantém loadError', async () => {
+    repo.listProjects.mockRejectedValue(new Error('boom'))
+    repo.listProfiles.mockResolvedValue([profile])
+    const { result } = renderHook(() => useProjects())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    await act(() => result.current.reload())
+    expect(result.current.loadError).not.toBeNull()
+    expect(result.current.projects).toEqual([])
+    expect(pushToast).not.toHaveBeenCalled()
   })
 
   it('falha em uma ação não desfaz outra ação bem-sucedida', async () => {

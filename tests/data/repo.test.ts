@@ -32,6 +32,9 @@ describe('repo', () => {
     expect(r).toEqual([{ id: 'p1', steps: [] }])
     expect(h.order).toHaveBeenCalledWith('position', { referencedTable: 'steps' })
     expect(h.order).toHaveBeenCalledWith('position')
+    expect(h.order).toHaveBeenCalledWith('created_at')
+    const topLevel = h.order.mock.calls.filter(c => c.length === 1).map(c => c[0])
+    expect(topLevel).toEqual(['position', 'created_at'])
   })
 
   it('erro do Supabase vira Error', async () => {

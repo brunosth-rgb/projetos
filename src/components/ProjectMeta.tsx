@@ -41,7 +41,10 @@ export function ProjectMeta({
         {URGENCY_LABEL[project.urgency]}
       </span>
       <span>{project.due_date ? formatDate(project.due_date) : 'Sem prazo'}</span>
-      <span aria-label="Progresso dos steps">{`${done}/${total}`}</span>
+      <span>
+        <span className="sr-only">Progresso dos steps: </span>
+        {`${done}/${total}`}
+      </span>
       {assignees.length > 0 && <span className="text-slate-600">{assignees.join(', ')}</span>}
     </div>
   )

@@ -32,11 +32,17 @@ export function stepProgress(p: Project): { done: number; total: number } {
   return { done: p.steps.filter(s => s.done).length, total: p.steps.length }
 }
 
+/** Tie-break for otherwise equal keys: older first. */
+export function compareCreatedAt(a: Project, b: Project): number {
+  if (a.created_at === b.created_at) return 0
+  return a.created_at < b.created_at ? -1 : 1
+}
+
 export function sortProjects(ps: Project[]): Project[] {
   return [...ps].sort((a, b) => {
     const u = URGENCY_RANK[b.urgency] - URGENCY_RANK[a.urgency]
     if (u !== 0) return u
-    if (a.due_date === b.due_date) return 0
+    if (a.due_date === b.due_date) return compareCreatedAt(a, b)
     if (a.due_date === null) return 1
     if (b.due_date === null) return -1
     return a.due_date < b.due_date ? -1 : 1
@@ -48,7 +54,8 @@ export function filterProjects(
   f: { showDone: boolean; statuses: Status[] | null; mineUserId: string | null },
 ): Project[] {
   return ps.filter(p => {
-    if (!f.showDone && p.status === 'concluido') return false
+    // An explicit status selection wins over showDone.
+    if (!f.showDone && !f.statuses && p.status === 'concluido') return false
     if (f.statuses && !f.statuses.includes(p.status)) return false
     if (f.mineUserId && !p.steps.some(s => !s.done && s.assignee_id === f.mineUserId)) return false
     return true

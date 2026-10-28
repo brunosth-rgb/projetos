@@ -75,6 +75,14 @@ describe('ListView', () => {
     expect(screen.getByText('Crítica')).toBeTruthy()
   })
 
+  it('progresso tem rótulo para leitor de tela sem esconder o texto visível', () => {
+    render(<ListView projects={[mk({ id: 'A' })]} profiles={profiles} today={today} onOpen={() => {}} />)
+    const visible = screen.getByText('0/0')
+    expect(visible).not.toHaveAttribute('aria-label')
+    expect(visible).toHaveTextContent('Progresso dos steps: 0/0')
+    expect(screen.getByText('Progresso dos steps:')).toHaveClass('sr-only')
+  })
+
   it('mostra e-mail quando responsável não tem nome e deduplica', () => {
     const ps = [
       mk({

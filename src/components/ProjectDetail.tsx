@@ -104,7 +104,6 @@ export function ProjectDetail({ project, profiles, actions, onClose }: Props) {
       urgency,
       due_date: dueDate || null,
       status,
-      position: 1000,
     })
     onClose()
   }

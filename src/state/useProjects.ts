@@ -27,6 +27,7 @@ export interface UseProjects {
 }
 
 const SAVE_ERROR = 'Não foi possível salvar. Tente de novo.'
+const RELOAD_ERROR = 'Não foi possível atualizar os projetos.'
 
 let tempCounter = 0
 const tempId = () => `tmp-${++tempCounter}`
@@ -57,6 +58,8 @@ export function useProjects(): UseProjects {
 
   // Mirror of the state, updated synchronously so back-to-back actions see each other's changes.
   const ref = useRef<Project[]>([])
+  // Once data has loaded, a failed reload keeps it on screen and only toasts.
+  const loadedOnce = useRef(false)
   const mounted = useRef(true)
   useEffect(() => {
     mounted.current = true
@@ -70,24 +73,29 @@ export function useProjects(): UseProjects {
     if (mounted.current) setProjectsState(ref.current)
   }, [])
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (): Promise<void> => {
     setLoading(true)
     setLoadError(null)
     try {
       const [ps, prof] = await Promise.all([repo.listProjects(), repo.listProfiles()])
       if (!mounted.current) return
+      loadedOnce.current = true
       ref.current = ps
       setProjectsState(ps)
       setProfiles(prof)
     } catch {
       if (!mounted.current) return
-      ref.current = []
-      setProjectsState([])
-      setLoadError('Não foi possível carregar os projetos.')
+      if (loadedOnce.current) {
+        pushToast({ message: RELOAD_ERROR, retry: () => void reload() })
+      } else {
+        ref.current = []
+        setProjectsState([])
+        setLoadError('Não foi possível carregar os projetos.')
+      }
     } finally {
       if (mounted.current) setLoading(false)
     }
-  }, [])
+  }, [pushToast])
 
   useEffect(() => {
     void reload()
@@ -126,8 +134,15 @@ export function useProjects(): UseProjects {
       list.map(p => ({ ...p, steps: p.steps.map(s => (s.id === stepId ? { ...s, ...patch } : s)) })),
     )
 
+  // New projects go to the end of their target column.
+  const nextPosition = (status: Status): number => {
+    const positions = ref.current.filter(p => p.status === status).map(p => p.position)
+    return positions.length ? Math.max(...positions) + 1000 : 1000
+  }
+
   const addProject: Actions['addProject'] = async input => {
     const id = tempId()
+    const position = nextPosition(input.status)
     const now = new Date().toISOString()
     const temp: Project = {
       id,
@@ -136,7 +151,7 @@ export function useProjects(): UseProjects {
       status: input.status,
       urgency: input.urgency,
       due_date: input.due_date,
-      position: input.position,
+      position,
       created_by: '',
       created_at: now,
       updated_at: now,
@@ -146,7 +161,7 @@ export function useProjects(): UseProjects {
     await optimistic(
       () => update(list => [...list, temp]),
       async () => {
-        const created = await repo.createProject(input)
+        const created = await repo.createProject({ ...input, position })
         update(list => list.map(p => (p.id === id ? created : p)))
       },
       SAVE_ERROR,

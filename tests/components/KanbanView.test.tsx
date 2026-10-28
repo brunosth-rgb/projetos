@@ -107,6 +107,17 @@ describe('KanbanView', () => {
   })
 })
 
+describe('groupByStatus', () => {
+  it('desempata position igual por created_at crescente', () => {
+    const g = groupByStatus([
+      mk({ id: 'novo', position: 1000, created_at: '2026-10-02T00:00:00Z' }),
+      mk({ id: 'velho', position: 1000, created_at: '2026-10-01T00:00:00Z' }),
+      mk({ id: 'primeiro', position: 500, created_at: '2026-10-03T00:00:00Z' }),
+    ])
+    expect(g.planejado.map(p => p.id)).toEqual(['primeiro', 'velho', 'novo'])
+  })
+})
+
 describe('resolveDrop', () => {
   it('soltar sobre coluna vazia', () => {
     expect(resolveDrop(board, 'a', 'column:concluido')).toEqual({ status: 'concluido', beforeId: null, afterId: null })
