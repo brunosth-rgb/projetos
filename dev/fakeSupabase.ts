@@ -3,6 +3,32 @@
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 import { PEOPLE } from './sample-data'
 
+// ?theme=light|dark|system pins the theme for screenshots (written where ThemeProvider reads it,
+// before the app renders; this module is imported by AuthProvider, ahead of the first render).
+{
+  const theme = new URLSearchParams(window.location.search).get('theme')
+  if (theme === 'light' || theme === 'dark' || theme === 'system') {
+    try {
+      localStorage.setItem('gp-theme', theme)
+    } catch {
+      // storage blocked: the inline script's choice stands
+    }
+    if (theme !== 'system') {
+      document.documentElement.setAttribute('data-theme', theme)
+      document.documentElement.style.colorScheme = theme
+    }
+  }
+  // ?view=lista|kanban picks the starting view the same way (App reads 'gp.view').
+  const view = new URLSearchParams(window.location.search).get('view')
+  if (view === 'lista' || view === 'kanban') {
+    try {
+      localStorage.setItem('gp.view', JSON.stringify(view))
+    } catch {
+      // ignore
+    }
+  }
+}
+
 type Listener = (event: AuthChangeEvent, session: Session | null) => void
 
 function userFor(email: string): User {

@@ -131,6 +131,12 @@ const SEEDS: Seed[] = [
     ],
   },
   {
+    title: 'Backup das fotos do escritório',
+    description: 'Ainda sem steps: só a ideia anotada.',
+    status: 'planejado', urgency: 'media', due: 2, createdDaysAgo: 1,
+    steps: [],
+  },
+  {
     title: 'Revisão do contrato de aluguel',
     description: '',
     status: 'planejado', urgency: 'baixa', due: null, createdDaysAgo: 3,

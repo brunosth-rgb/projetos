@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from './auth/AuthProvider'
+import { DeadlineStrip } from './components/DeadlineStrip'
 import { Header, type Filters, type View } from './components/Header'
 import { TopBar } from './components/TopBar'
 import { KanbanView } from './components/KanbanView'
@@ -126,6 +127,11 @@ export default function App() {
             Novo projeto
           </button>
         </div>
+        {!loadError && projects.length > 0 && (
+          <div className="mb-5">
+            <DeadlineStrip projects={projects} today={today} onOpen={setOpenId} />
+          </div>
+        )}
         <Header view={view} onViewChange={setView} filters={filters} onFiltersChange={setFilters} />
         <main className="mt-5">
           {loadError ? (

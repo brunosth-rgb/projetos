@@ -70,6 +70,17 @@ describe('App', () => {
     expect(screen.getByText('1 atrasado')).toBeInTheDocument()
   })
 
+  it('faixa de próximos prazos só aparece com projetos e abre o projeto', async () => {
+    const { unmount } = render(<App />)
+    expect(screen.queryByRole('heading', { name: 'Próximos prazos' })).not.toBeInTheDocument()
+    unmount()
+    state.projects = [{ ...mk('Velho'), due_date: '2000-01-01' }]
+    render(<App />)
+    expect(screen.getByRole('heading', { name: 'Próximos prazos' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Atrasados: 1 projeto' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
   it('sem resumo enquanto carrega ou com erro', () => {
     state.loading = true
     const { unmount } = render(<App />)
