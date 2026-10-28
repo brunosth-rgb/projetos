@@ -31,3 +31,12 @@ export interface Profile {
   display_name: string
   email: string
 }
+
+export type NewProjectInput = {
+  title: string
+  description?: string
+  urgency: Urgency
+  due_date: string | null
+  status: Status
+  position: number
+}
