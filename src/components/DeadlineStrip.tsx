@@ -78,9 +78,16 @@ export function DeadlineStrip({
     }
   }, [open])
 
-  if (projects.length === 0) return null
   const cells = buildCells(projects, today)
   const openCell = cells.find(c => c.key === open)
+  const openEmpty = open !== null && (!openCell || openCell.projects.length === 0)
+
+  // The open cell lost its projects (edited, completed, deleted, day rolled over): nothing to list.
+  useEffect(() => {
+    if (openEmpty) setOpen(null)
+  }, [openEmpty])
+
+  if (projects.length === 0) return null
 
   const activate = (c: Cell) => {
     if (c.projects.length === 0) return
@@ -106,7 +113,18 @@ export function DeadlineStrip({
   }
 
   return (
-    <div ref={wrapRef} className="relative">
+    <div
+      ref={wrapRef}
+      className="relative"
+      onBlur={e => {
+        // Focus left both the popover and its cell (Tab past the list, focus elsewhere): close.
+        if (!open) return
+        const next = e.relatedTarget as Node | null
+        const cell = cellRefs.current.get(open)
+        if (next && (popRef.current?.contains(next) || cell?.contains(next))) return
+        setOpen(null)
+      }}
+    >
       <h2 className="sr-only">Próximos prazos</h2>
       {/* gap-px over the border colour draws the 1px dividers in both the 8x1 and the 4x2 layout. */}
       <div className="grid grid-cols-4 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-8">
@@ -142,7 +160,7 @@ export function DeadlineStrip({
           )
         })}
       </div>
-      {openCell && (
+      {openCell && !openEmpty && (
         <div
           ref={popRef}
           id={popId}

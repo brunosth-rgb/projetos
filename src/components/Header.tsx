@@ -37,7 +37,7 @@ export function Header({
 
   return (
     <div
-      className="no-scrollbar -mx-6 flex items-center gap-2 overflow-x-auto px-6 py-px max-sm:-mx-4 max-sm:px-4"
+      className="no-scrollbar -mx-6 -my-1.5 flex items-center gap-2 overflow-x-auto px-6 py-1.5 max-sm:-mx-4 max-sm:px-4"
     >
       <div className="inline-flex h-9 shrink-0 items-stretch gap-0.5 rounded-control border border-control bg-surface p-[3px] max-sm:h-11">
         {seg('lista', 'Lista')}

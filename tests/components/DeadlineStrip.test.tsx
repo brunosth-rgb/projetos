@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { DeadlineStrip } from '../../src/components/DeadlineStrip'
@@ -91,5 +91,35 @@ describe('DeadlineStrip', () => {
     expect(screen.getByRole('group')).toBeInTheDocument()
     await userEvent.click(document.body)
     expect(screen.queryByRole('group')).not.toBeInTheDocument()
+  })
+
+  it('fecha a lista quando o foco sai da lista e da célula', async () => {
+    render(
+      <>
+        <DeadlineStrip projects={[mk('Beta', '2026-10-01'), mk('Alfa', '2026-10-02')]} today={today} onOpen={() => {}} />
+        <button type="button">Depois</button>
+      </>,
+    )
+    const cell = screen.getByRole('button', { name: /^Atrasados/ })
+    await userEvent.click(cell)
+    expect(screen.getByRole('group')).toBeInTheDocument()
+    // Tab inside the list keeps it open.
+    await userEvent.tab()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Beta' }))
+    expect(screen.getByRole('group')).toBeInTheDocument()
+    // Focus moving outside both closes it.
+    act(() => screen.getByRole('button', { name: 'Depois' }).focus())
+    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+    expect(cell).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('fecha a lista quando a célula aberta fica sem projetos', async () => {
+    const ps = [mk('Beta', '2026-10-01'), mk('Alfa', '2026-10-02')]
+    const { rerender } = render(<DeadlineStrip projects={ps} today={today} onOpen={() => {}} />)
+    await userEvent.click(screen.getByRole('button', { name: /^Atrasados/ }))
+    expect(screen.getByRole('group')).toBeInTheDocument()
+    rerender(<DeadlineStrip projects={[mk('Beta', '2026-12-01'), mk('Alfa', '2026-12-02')]} today={today} onOpen={() => {}} />)
+    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Atrasados: nenhum projeto' })).not.toHaveAttribute('aria-expanded')
   })
 })

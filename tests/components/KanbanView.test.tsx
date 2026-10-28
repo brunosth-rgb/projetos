@@ -110,6 +110,29 @@ describe('KanbanView', () => {
     expect(within(plan).getByRole('heading')).toHaveTextContent('Planejado1')
   })
 
+  it('desliga o scroll-snap durante o arraste e religa ao soltar ou cancelar', async () => {
+    render(
+      <KanbanView projects={[mk({ id: 'P1' }), mk({ id: 'P2', position: 2 })]} profiles={profiles} today={today} onOpen={() => {}} onMove={() => {}} />,
+    )
+    const strip = screen.getByRole('region', { name: 'Planejado' }).parentElement as HTMLElement
+    expect(strip).toHaveClass('snap-x', 'snap-mandatory')
+    screen.getByRole('button', { name: /P1/ }).focus()
+    await userEvent.keyboard(' ')
+    await screen.findByText(/Projeto P1 (selecionado|sobre P1)\./)
+    expect(strip).toHaveClass('snap-none')
+    expect(strip).not.toHaveClass('snap-mandatory')
+    await userEvent.keyboard(' ')
+    await screen.findByText(/Projeto P1 solto/)
+    expect(strip).toHaveClass('snap-mandatory')
+    screen.getByRole('button', { name: /P1/ }).focus()
+    await userEvent.keyboard(' ')
+    await screen.findByText(/Projeto P1 (selecionado|sobre P1)\./)
+    expect(strip).not.toHaveClass('snap-mandatory')
+    await userEvent.keyboard('{Escape}')
+    await screen.findByText(/Movimento do projeto P1 cancelado/)
+    expect(strip).toHaveClass('snap-x', 'snap-mandatory')
+  })
+
   it('o contêiner das colunas rola horizontalmente', () => {
     render(<KanbanView projects={[]} profiles={profiles} today={today} onOpen={() => {}} onMove={() => {}} />)
     const region = screen.getByRole('region', { name: 'Planejado' })

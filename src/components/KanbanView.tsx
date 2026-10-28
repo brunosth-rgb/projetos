@@ -14,7 +14,7 @@ import {
   type UniqueIdentifier,
 } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import type { KeyboardEvent } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import type { Profile, Project, Status } from '../domain/types'
 import { compareCreatedAt, isDueSoon, isOverdue } from '../domain/projects'
 import { STATUS_LABEL } from '../ui/labels'
@@ -217,6 +217,8 @@ export function KanbanView({
   onMove: (id: string, status: Status, beforeId: string | null, afterId: string | null) => void
 }) {
   const columns = groupByStatus(projects)
+  // Scroll-snap fights dnd-kit's auto-scroll (each step snaps back), so it is off during a drag.
+  const [dragging, setDragging] = useState(false)
   const sensors = useSensors(
     // Mouse: small distance so a plain click still opens the card.
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -255,7 +257,12 @@ export function KanbanView({
     <DndContext
       sensors={sensors}
       collisionDetection={kanbanCollision}
-      onDragEnd={handleDragEnd}
+      onDragStart={() => setDragging(true)}
+      onDragEnd={e => {
+        setDragging(false)
+        handleDragEnd(e)
+      }}
+      onDragCancel={() => setDragging(false)}
       accessibility={{
         announcements,
         screenReaderInstructions: {
@@ -264,7 +271,11 @@ export function KanbanView({
         },
       }}
     >
-      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 max-sm:-mx-4 max-sm:scroll-px-4 max-sm:px-4 sm:snap-none">
+      <div
+        className={`flex gap-3 overflow-x-auto pb-2 max-sm:-mx-4 max-sm:scroll-px-4 max-sm:px-4 sm:snap-none ${
+          dragging ? 'snap-none' : 'snap-x snap-mandatory'
+        }`}
+      >
         {STATUSES.map(s => (
           <Column key={s} status={s} projects={columns[s]} profiles={profiles} today={today} onOpen={onOpen} />
         ))}
