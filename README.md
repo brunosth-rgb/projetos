@@ -36,6 +36,8 @@ npm run test:rls  # testes de RLS no PGlite
 
 Para conferir o build como no Pages: `VITE_BASE=/gerenciador/ npm run build` (com as duas variáveis do Supabase definidas) e `npx vite preview --base /gerenciador/`.
 
+O prefixo `VAR=valor npm run build` funciona no bash, mas não no PowerShell. No PowerShell, defina a variável antes: `$env:VITE_BASE='/gerenciador/'; npm run build`. No Git Bash do Windows, um valor que começa com `/` (como `VITE_BASE=/gerenciador/`) pode ser convertido em um caminho do Windows; nesse caso use `MSYS_NO_PATHCONV=1 VITE_BASE=/gerenciador/ npm run build` ou defina a variável pelo PowerShell.
+
 ## Sobre os testes de RLS
 
 `npm run test:rls` roda as políticas num PGlite (Postgres em WebAssembly), sem Docker, com um schema `auth` simulado (`auth.uid()`, papéis `anon`/`authenticated`). Isso prova a lógica das políticas SQL e do trigger. Não prova o comportamento do Supabase real: GoTrue, PostgREST, grants padrão dos papéis, configuração de signup e e-mails. Por isso a verificação manual abaixo importa.
