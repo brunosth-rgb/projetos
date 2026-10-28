@@ -4,6 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gerenciador de Projetos</title>
+    <script>
+      // Aplica o tema antes da primeira pintura (mesma regra de src/ui/theme.tsx).
+      (function () {
+        var pref = 'system'
+        try {
+          var v = localStorage.getItem('gp-theme')
+          if (v === 'light' || v === 'dark' || v === 'system') pref = v
+        } catch (e) {}
+        var dark = false
+        try {
+          dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        } catch (e) {}
+        var t = dark ? 'dark' : 'light'
+        document.documentElement.setAttribute('data-theme', t)
+        document.documentElement.style.colorScheme = t
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
