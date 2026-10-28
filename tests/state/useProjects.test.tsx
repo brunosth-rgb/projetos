@@ -183,4 +183,50 @@ describe('useProjects', () => {
     expect(result.current.projects[0].steps).toHaveLength(1)
     expect(pushToast).toHaveBeenCalledTimes(2)
   })
+
+  it('moveProject sobreposto: falha da primeira não sobrescreve a segunda', async () => {
+    const { result } = await setup([mkProject({ id: 'p1', status: 'planejado' })])
+    let rejectFirst!: (e: Error) => void
+    repo.updateProject
+      .mockImplementationOnce(() => new Promise((_, rej) => { rejectFirst = rej }))
+      .mockResolvedValueOnce(undefined)
+    let first!: Promise<void>
+    act(() => { first = result.current.actions.moveProject('p1', 'em_execucao', null, null) })
+    await act(() => result.current.actions.moveProject('p1', 'concluido', null, null))
+    await act(async () => { rejectFirst(new Error('x')); await first })
+    expect(result.current.projects[0].status).toBe('concluido')
+    expect(result.current.projects[0].completed_at).not.toBeNull()
+    expect(pushToast).toHaveBeenCalledTimes(1)
+  })
+
+  it('editProject sobreposto no mesmo campo mantém o valor mais novo', async () => {
+    const { result } = await setup([mkProject({ title: 'A' })])
+    let rejectFirst!: (e: Error) => void
+    repo.updateProject
+      .mockImplementationOnce(() => new Promise((_, rej) => { rejectFirst = rej }))
+      .mockResolvedValueOnce(undefined)
+    let first!: Promise<void>
+    act(() => { first = result.current.actions.editProject('p1', { title: 'B' }) })
+    await act(() => result.current.actions.editProject('p1', { title: 'C' }))
+    await act(async () => { rejectFirst(new Error('x')); await first })
+    expect(result.current.projects[0].title).toBe('C')
+    expect(pushToast).toHaveBeenCalledTimes(1)
+  })
+
+  it('editProject para concluido define completed_at', async () => {
+    const { result } = await setup([mkProject()])
+    repo.updateProject.mockResolvedValue(undefined)
+    await act(() => result.current.actions.editProject('p1', { status: 'concluido' }))
+    expect(repo.updateProject.mock.calls[0][1].completed_at).not.toBeNull()
+    expect(result.current.projects[0].completed_at).not.toBeNull()
+  })
+
+  it('editProject saindo de concluido envia completed_at null', async () => {
+    const { result } = await setup([
+      mkProject({ status: 'concluido', completed_at: '2026-01-01T00:00:00Z' }),
+    ])
+    repo.updateProject.mockResolvedValue(undefined)
+    await act(() => result.current.actions.editProject('p1', { status: 'planejado' }))
+    expect(repo.updateProject.mock.calls[0][1]).toMatchObject({ status: 'planejado', completed_at: null })
+  })
 })

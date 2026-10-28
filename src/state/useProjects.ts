@@ -38,6 +38,16 @@ function pickPrev<T extends object>(entity: T, patch: Partial<T>): Partial<T> {
   return prev
 }
 
+// Of the fields `patch` applied, returns the previous values only for those whose
+// current value still equals what the patch set.
+function unchangedPrev<T extends object>(entity: T, applied: Partial<T>, prev: Partial<T>): Partial<T> {
+  const out: Partial<T> = {}
+  for (const key of Object.keys(applied) as (keyof T)[]) {
+    if (entity[key] === applied[key]) out[key] = prev[key]
+  }
+  return out
+}
+
 export function useProjects(): UseProjects {
   const { pushToast } = useToast()
   const [projects, setProjectsState] = useState<Project[]>([])
@@ -145,17 +155,41 @@ export function useProjects(): UseProjects {
     )
   }
 
-  const editProject: Actions['editProject'] = async (id, patch) => {
-    const current = ref.current.find(p => p.id === id)
-    if (!current) return
+  // Single place for the completed_at rule: set when entering `concluido`, null when leaving it.
+  const withCompletedAt = (current: Project, patch: ProjectPatch): ProjectPatch => {
+    if (patch.status === undefined) return patch
+    if (patch.status === 'concluido') {
+      const keep = current.status === 'concluido' && current.completed_at
+      return { ...patch, completed_at: keep ? current.completed_at : new Date().toISOString() }
+    }
+    return { ...patch, completed_at: null }
+  }
+
+  // Optimistic update of a project; on failure each field is restored only if it
+  // still holds the value this action applied (a newer action's value is kept).
+  const applyProjectPatch = (
+    id: string,
+    current: Project,
+    patch: ProjectPatch,
+    retry: () => void,
+  ): Promise<void> => {
     const prev = pickPrev(current, patch)
-    await optimistic(
+    return optimistic(
       () => patchProject(id, patch),
       () => repo.updateProject(id, patch),
       SAVE_ERROR,
-      () => patchProject(id, prev),
-      () => void editProject(id, patch),
+      () => {
+        const now = ref.current.find(p => p.id === id)
+        if (now) patchProject(id, unchangedPrev(now, patch, prev))
+      },
+      retry,
     )
+  }
+
+  const editProject: Actions['editProject'] = async (id, patch) => {
+    const current = ref.current.find(p => p.id === id)
+    if (!current) return
+    await applyProjectPatch(id, current, withCompletedAt(current, patch), () => void editProject(id, patch))
   }
 
   const moveProject: Actions['moveProject'] = async (id, status, beforeId, afterId) => {
@@ -163,24 +197,11 @@ export function useProjects(): UseProjects {
     if (!current) return
     const posOf = (pid: string | null) =>
       pid === null ? null : (ref.current.find(p => p.id === pid)?.position ?? null)
-    const patch: ProjectPatch = {
+    const patch = withCompletedAt(current, {
       status,
       position: positionBetween(posOf(beforeId), posOf(afterId)),
-      completed_at:
-        status === 'concluido'
-          ? current.status === 'concluido' && current.completed_at
-            ? current.completed_at
-            : new Date().toISOString()
-          : null,
-    }
-    const prev = pickPrev(current, patch)
-    await optimistic(
-      () => patchProject(id, patch),
-      () => repo.updateProject(id, patch),
-      SAVE_ERROR,
-      () => patchProject(id, prev),
-      () => void moveProject(id, status, beforeId, afterId),
-    )
+    })
+    await applyProjectPatch(id, current, patch, () => void moveProject(id, status, beforeId, afterId))
   }
 
   const removeProject: Actions['removeProject'] = async id => {
@@ -238,7 +259,10 @@ export function useProjects(): UseProjects {
       () => patchStep(stepId, patch),
       () => repo.updateStep(stepId, patch),
       SAVE_ERROR,
-      () => patchStep(stepId, prev),
+      () => {
+        const now = findStep(stepId)
+        if (now) patchStep(stepId, unchangedPrev(now.step, patch, prev))
+      },
       () => void editStep(stepId, patch),
     )
   }
