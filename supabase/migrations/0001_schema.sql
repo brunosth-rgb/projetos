@@ -1,9 +1,9 @@
 -- 0001_schema.sql
 -- Esquema do gerenciador de projetos: profiles, projects, steps.
--- Fronteira de seguranÃ§a: RLS ligada nas 3 tabelas; policies apenas para o
--- papel `authenticated`. Nenhuma policy para `anon` (anon nÃ£o vÃª nem grava nada).
--- Depende do que o Supabase jÃ¡ fornece: schema auth, auth.users, auth.uid() e
--- os papÃ©is anon/authenticated/service_role.
+-- Fronteira de segurança: RLS ligada nas 3 tabelas; policies apenas para o
+-- papel `authenticated`. Nenhuma policy para `anon` (anon não vê nem grava nada).
+-- Depende do que o Supabase já fornece: schema auth, auth.users, auth.uid() e
+-- os papéis anon/authenticated/service_role.
 
 -- ---------------------------------------------------------------------------
 -- Tabelas
@@ -46,8 +46,8 @@ create index steps_assignee_id_idx on public.steps (assignee_id);
 create index projects_created_by_idx on public.projects (created_by);
 
 -- ---------------------------------------------------------------------------
--- Gatilho: cria o profile quando um usuÃ¡rio Ã© criado em auth.users
--- security definer + search_path vazio: roda com o dono da funÃ§Ã£o e sÃ³ usa
+-- Gatilho: cria o profile quando um usuário é criado em auth.users
+-- security definer + search_path vazio: roda com o dono da função e só usa
 -- nomes totalmente qualificados.
 -- ---------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ begin
 end;
 $$;
 
--- A funÃ§Ã£o sÃ³ deve ser chamada pelo gatilho, nunca via API.
+-- A função só deve ser chamada pelo gatilho, nunca via API.
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
 
 create trigger on_auth_user_created
